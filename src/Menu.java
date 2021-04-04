@@ -13,8 +13,8 @@ public class Menu {
     public String getStop(Element s) {
         String str = s.text();
         if (str.contains("-")) {
-            String s1 = str.replace("-", "");
-            return s1;
+            String replacedStr = str.replace("-", "");
+            return replacedStr ;
         } else return str;
     }
 
