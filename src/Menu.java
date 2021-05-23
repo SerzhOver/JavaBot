@@ -2,7 +2,12 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
 
 public class Menu {
     Document document = null;
@@ -10,59 +15,55 @@ public class Menu {
     public Menu() {
     }
 
-    public String getStop(Element s) {
-        String str = s.text();
-        if (str.contains("-")) {
-            String replacedStr = str.replace("-", "");
-            return replacedStr ;
-        } else return str;
+    public String getArriveTime() {
+        String time = "";
+
+        Elements arrive = this.document.getElementsByClass("trip-time");
+
+        for (int i = 0; i < arrive.size(); i++) {
+            time = arrive.get(1).text();
+        }
+        return time;
     }
 
-    public String[] getTrains(String station) throws IOException {
-        if (station.equalsIgnoreCase("Аккаржа")) {
-            this.document = Jsoup.connect("https://proizd.ua/ua/station/akkarzha").get();
-        }
-        if (station.equalsIgnoreCase("Антонівка")) {
-            this.document = Jsoup.connect("https://proizd.ua/ua/station/antonivka").get();
-        }
-        if (station.equalsIgnoreCase("Апостолове")) {
-            this.document = Jsoup.connect("https://proizd.ua/ua/station/apostolove").get();
-        }
-        if (station.equalsIgnoreCase("Алтинівка")) {
-            this.document = Jsoup.connect("https://proizd.ua/ua/station/altynivka").get();
-        }
-        if (station.equalsIgnoreCase("бугаз")) {
-            this.document = Jsoup.connect("https://proizd.ua/ua/station/buhaz").get();
-        }
-        if (station.equalsIgnoreCase("букачівці")) {
-            this.document = Jsoup.connect("https://proizd.ua/ua/station/bukachivtsi").get();
-        }
-        if (station.equalsIgnoreCase("бурштин")) {
-            this.document = Jsoup.connect("https://proizd.ua/ua/station/burshtyn").get();
-        }
-        if (station.equalsIgnoreCase("березине")) {
-            this.document = Jsoup.connect("https://proizd.ua/ua/station/berezyne").get();
+    public String[] getTrains(String firstMsg, String secondMsg) throws IOException {
+        HashMap<String, Integer> stations = Station.getStations();
+
+        Calendar date = GregorianCalendar.getInstance();
+        date.add(Calendar.DATE, 7);
+
+        String datePlus = new SimpleDateFormat("dd.MM.yyyy").format(date.getTime());
+
+        while (true) {
+            if (stations.containsKey(firstMsg) && stations.containsKey(secondMsg)) {
+                this.document = Jsoup.connect("https://e-kvytok.ua/search?from="
+                        + stations.get(firstMsg) + "&to=" + stations.get(secondMsg) + "&date=" + datePlus).get();
+                break;
+            }
         }
 
+        Elements number = this.document.getElementsByClass("train-number");
+        Elements train = this.document.getElementsByClass("trip-name");
+        Elements depart = this.document.getElementsByClass("trip-time");
+        Elements timeInWay = this.document.getElementsByClass("trip-duration");
+        String[] info = new String[20];
 
-        Elements number = this.document.getElementsByClass("train__number");
-        Elements train = this.document.getElementsByClass("train__route");
-        Elements timeDepart = this.document.getElementsByClass("train__time train__time--departure");
-        Elements timeArrive = this.document.getElementsByClass("train__time train__time--arrival");
-        Elements timeStop = this.document.getElementsByClass("stay-time__time");
-        String[] info = new String[3];
-
-        for (int i = 0; i < number.size(); ++i) {
-            if (i < 3) {
+        for (int i = 0; i <= number.size(); i++) {
+            if (i < number.size() - 1) {
                 info[i] = " Номер потяга : " + ((Element) number.get(i)).text() + "\n" + " Маршрут : "
-                        + ((Element) train.get(i)).text() + "\n" + " Час прибуття : " + ((Element) timeArrive.get(i)).text()
-                        + "\n" + " Час зупинки : " + getStop(timeStop.get(i)) + " хв " + "\n" + " Час відправлення : "
-                        + ((Element) timeDepart.get(i)).text() ;
+                        + ((Element) train.get(i)).text() + "\n" + " Відправлення : "
+                        + ((Element) depart.get(i)).text() + "\n" + " Час в дорозі : "
+                        + ((Element) timeInWay.get(i)).text() + "\n" + " Прибуття : "
+                        + getArriveTime();
+            }
+            if (number.size()==0){
+                info[i]="За вашим напрямком нічого не знайдено";
+                break;
             }
         }
         return info;
-    }
 
+    }
 
 }
 

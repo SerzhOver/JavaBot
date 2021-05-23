@@ -7,75 +7,68 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class Bot extends TelegramLongPollingBot {
-    ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
-    long chat_id;
+    private ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
+    private String Msg = "";
+    private HashMap<String, Integer> stations = Station.getStations();
+    private long chat_id;
 
     public void onUpdateReceived(Update update) {
+        Station.getStations();
         chat_id = update.getMessage().getChatId();
 
-        SendMessage sendMessage = new SendMessage().setChatId(chat_id)
-                .setText(getMessage(update.getMessage().getText()));
-        sendMessage.setReplyMarkup(replyKeyboardMarkup);
+        SendMessage sendMessage = new SendMessage();
+        sendMessage.setChatId(chat_id);
+        sendMessage.setText(getMessage(update.getMessage().getText()));
 
         try {
             execute(sendMessage);
+
+
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }
     }
 
-    public String getForCase(String msg) {
-        try {
-            return getTrain(new Menu().getTrains(msg));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return msg;
-    }
 
-    public String getMessage(String msg) {
+    private String getMessage(String firstMsg) {
         ArrayList<KeyboardRow> keyboard = new ArrayList<KeyboardRow>();
 
         replyKeyboardMarkup.setSelective(true);
         replyKeyboardMarkup.setResizeKeyboard(true);
         replyKeyboardMarkup.setOneTimeKeyboard(true);
 
-
-        if (msg.equalsIgnoreCase("Привіт") || msg.equalsIgnoreCase("Меню")
-                || msg.equals("/start")) {
+        if (firstMsg.equalsIgnoreCase("привіт") || firstMsg.equalsIgnoreCase("меню")
+                || firstMsg.equals("/start")) {
             keyboard.clear();
-            return "Привіт, напиши  назви зупинки";
-        }
-        switch (msg.toLowerCase()) {
-            case "аккаржа":
-                getForCase(msg);
-            case "антонівка":
-                getForCase(msg);
-                break;
-            case "апостолове":
-                getForCase(msg);
-            case "алтинівка":
-                getForCase(msg);
-            case "бугаз":
-                getForCase(msg);
-            case "букачівці":
-                getForCase(msg);
-            case "бурштин":
-                getForCase(msg);
-            case "березине":
-                getForCase(msg);
+            return "Привіт, напиши  назви станції відправлення";
         }
 
-        return null;
+        if (stations.containsKey(firstMsg.toLowerCase())) {
+            if (stations.containsKey(Msg)) {
+                try {
+                    return getTrain(new Menu().getTrains(Msg, firstMsg));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        if (stations.containsKey(firstMsg.toLowerCase())) {
+            Msg = firstMsg.toLowerCase();
+            return "Введи станцію прибуття";
+        }
+        return "Упс, такої станції не існує";
     }
 
     public String getTrain(String[] text) {
         SendMessage sendMessage = new SendMessage().setChatId(chat_id);
+        Msg = "";
+
         for (int i = 0; i < text.length; i++) {
             try {
-
                 if ((i + 1) == text.length) {
                     return text[i];
                 }
