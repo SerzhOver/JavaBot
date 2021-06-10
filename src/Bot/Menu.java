@@ -1,3 +1,6 @@
+package Bot;
+
+import DataBase.ConnectionDB;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -7,10 +10,10 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
-import java.util.HashMap;
 
 public class Menu {
     Document document = null;
+    public ConnectionDB connectionDB = new ConnectionDB();
 
     public Menu() {
     }
@@ -27,17 +30,15 @@ public class Menu {
     }
 
     public String[] getTrains(String firstMsg, String secondMsg) throws IOException {
-        HashMap<String, Integer> stations = Station.getStations();
-
         Calendar date = GregorianCalendar.getInstance();
         date.add(Calendar.DATE, 7);
 
         String datePlus = new SimpleDateFormat("dd.MM.yyyy").format(date.getTime());
 
         while (true) {
-            if (stations.containsKey(firstMsg) && stations.containsKey(secondMsg)) {
+            if (connectionDB.getNameStation(firstMsg) == true && connectionDB.getNameStation(secondMsg) == true) {
                 this.document = Jsoup.connect("https://e-kvytok.ua/search?from="
-                        + stations.get(firstMsg) + "&to=" + stations.get(secondMsg) + "&date=" + datePlus).get();
+                        + connectionDB.getID(firstMsg) + "&to=" + connectionDB.getID(secondMsg) + "&date=" + datePlus).get();
                 break;
             }
         }
@@ -56,8 +57,8 @@ public class Menu {
                         + ((Element) timeInWay.get(i)).text() + "\n" + " Прибуття : "
                         + getArriveTime();
             }
-            if (number.size()==0){
-                info[i]="За вашим напрямком нічого не знайдено";
+            if (number.size() == 0) {
+                info[i] = "За вашим напрямком нічого не знайдено";
                 break;
             }
         }

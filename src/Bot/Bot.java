@@ -1,3 +1,6 @@
+package Bot;
+
+import DataBase.ConnectionDB;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -7,16 +10,15 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 
 public class Bot extends TelegramLongPollingBot {
     private ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
     private String Msg = "";
-    private HashMap<String, Integer> stations = Station.getStations();
     private long chat_id;
+    public ConnectionDB connectionDB = new ConnectionDB();
+    public Menu menu = new Menu();
 
     public void onUpdateReceived(Update update) {
-        Station.getStations();
         chat_id = update.getMessage().getChatId();
 
         SendMessage sendMessage = new SendMessage();
@@ -43,23 +45,24 @@ public class Bot extends TelegramLongPollingBot {
         if (firstMsg.equalsIgnoreCase("привіт") || firstMsg.equalsIgnoreCase("меню")
                 || firstMsg.equals("/start")) {
             keyboard.clear();
-            return "Привіт, напиши  назви станції відправлення";
+            return "Привіт, напиши станцію відправлення";
         }
 
-        if (stations.containsKey(firstMsg.toLowerCase())) {
-            if (stations.containsKey(Msg)) {
+        if (connectionDB.getNameStation(firstMsg.toLowerCase()) == true) {
+            if (connectionDB.getNameStation(Msg.toLowerCase()) == true) {
                 try {
-                    return getTrain(new Menu().getTrains(Msg, firstMsg));
+                    return getTrain(menu.getTrains(Msg.toLowerCase(), firstMsg.toLowerCase()));
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
         }
 
-        if (stations.containsKey(firstMsg.toLowerCase())) {
-            Msg = firstMsg.toLowerCase();
+        if (connectionDB.getNameStation(firstMsg.toLowerCase()) == true) {
+            Msg = firstMsg;
             return "Введи станцію прибуття";
         }
+
         return "Упс, такої станції не існує";
     }
 
